@@ -127,8 +127,8 @@ def send_obstacle_distance_message():
 def send_distance_sensor_message():
     # Use this to rotate all processed data
     camera_facing_angle_degree = 0
-    orientation = int(camera_facing_angle_degree / 45)
-    
+    orientation = camera_facing_angle_degree // 45
+
     min_dist_cm = 10
     max_dist_cm = 800
     curr_dist_cm = 100
@@ -153,14 +153,14 @@ def send_msg_to_gcs(text_to_be_sent):
     # Defined here: https://mavlink.io/en/messages/common.html#MAV_SEVERITY
     # MAV_SEVERITY = 3 will let the message be displayed on Mission Planner HUD, but 6 is ok for QGroundControl
     if is_vehicle_connected == True:
-        text_msg = 'OA: ' + text_to_be_sent
+        text_msg = f'OA: {text_to_be_sent}'
         status_msg = vehicle.message_factory.statustext_encode(
             6,                      # MAV_SEVERITY
             text_msg.encode()	    # max size is char[50]       
         )
         vehicle.send_mavlink(status_msg)
         vehicle.flush()
-        print("INFO: " + text_to_be_sent)
+        print(f"INFO: {text_to_be_sent}")
     else:
         print("INFO: Vehicle not connected. Cannot send text message to Ground Control Station (GCS)")
 
@@ -180,7 +180,7 @@ def update_timesync(ts=0, tc=0):
 def vehicle_connect():
     global vehicle, is_vehicle_connected
 
-    if vehicle == None:
+    if vehicle is None:
         try:
             vehicle = connect(connection_string, wait_ready = True, baud = connection_baudrate, source_system = 1)
         except Exception as e:
@@ -190,7 +190,7 @@ def vehicle_connect():
             print('Connection error! Retrying...')
             sleep(1)
 
-    if vehicle == None:
+    if vehicle is None:
         is_vehicle_connected = False
         return False
     else:
@@ -232,8 +232,6 @@ except KeyboardInterrupt:
 
 except Exception as e:
     print(e)
-    pass
-
 except:
     send_msg_to_gcs('ERROR: Depth camera disconnected')  
 

@@ -39,7 +39,7 @@ vehicle = None
 #######################################
 
 # Set up option parsing to get connection string
-import argparse  
+import argparse
 parser = argparse.ArgumentParser(description='Example showing how to set and clear vehicle channel-override information.')
 parser.add_argument('--connect', 
                    help="vehicle connection target string. If not specified, SITL automatically started and used.")
@@ -58,7 +58,7 @@ if not connection_string:
     sitl = dronekit_sitl.start_default()
     connection_string = sitl.connection_string()
 
-print('Connecting to vehicle on: %s' % connection_string)
+print(f'Connecting to vehicle on: {connection_string}')
 vehicle = connect(connection_string, wait_ready=True)
 
 @vehicle.on_message('RC_CHANNELS')
@@ -161,7 +161,7 @@ def send_ned_velocity(velocity_x, velocity_y, velocity_z, duration):
 
 
     # send command to vehicle on 1 Hz cycle
-    for x in range(0,duration):
+    for _ in range(0,duration):
         vehicle.send_mavlink(msg)
         time.sleep(1)
 
@@ -249,10 +249,7 @@ def condition_yaw(heading, relative=False):
     For more information see: 
     http://copter.ardupilot.com/wiki/common-mavlink-mission-command-messages-mav_cmd/#mav_cmd_condition_yaw
     """
-    if relative:
-        is_relative = 1 #yaw relative to direction of travel
-    else:
-        is_relative = 0 #yaw is an absolute angle
+    is_relative = 1 if relative else 0
     # create the CONDITION_YAW command using command_long_encode()
     msg = vehicle.message_factory.command_long_encode(
         0, 0,    # target system, target component

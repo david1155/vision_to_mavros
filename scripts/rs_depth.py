@@ -22,7 +22,7 @@ FPS          = 30               # Defines the rate of frames per second
 HEIGHT_RATIO = 20               # Defines the height ratio between the original frame to the new frame
 WIDTH_RATIO  = 10               # Defines the width ratio between the original frame to the new frame
 MAX_DEPTH    = 1                # Approximate the coverage of pixels within this range (meter)
-ROW_LENGTH   = int(WIDTH / WIDTH_RATIO)
+ROW_LENGTH = WIDTH // WIDTH_RATIO
 pixels       = " .:nhBXWW"      # The text-based representation of depth
 
 depth_scale = 0
@@ -40,7 +40,7 @@ def calculate_depth_txt_img(depth_mat):
         for x in range(WIDTH):
             # dist = depth_frame.get_distance(x, y) is simplier to implement, but calling `get_distance` excessively can result in bad performance (much slower), so it could be beneficial to read the `DEPTH_UNITS` option directly from the `depth_sensor` and use it to convert raw depth pixels to meters, which is what we do here
             dist = depth_mat[y,x] * depth_scale
-            if 0 < dist and dist < MAX_DEPTH:
+            if 0 < dist < MAX_DEPTH:
                 coverage[x // WIDTH_RATIO] += 1
 
         if y % HEIGHT_RATIO is (HEIGHT_RATIO - 1):
@@ -50,7 +50,7 @@ def calculate_depth_txt_img(depth_mat):
                 line += pixels[pixel_index]
             coverage = [0] * ROW_LENGTH
             img_txt += line + "\n"
-            
+
     return img_txt
 
 ######################################################
@@ -78,14 +78,14 @@ try:
 
         if not depth_frame:
             continue
-        
+
         depth_data = depth_frame.as_frame().get_data()
         depth_array = np.asanyarray(depth_data)
-        
+
         # Print a simple text-based representation of the image, by breaking it into WIDTH_RATIO x HEIGHT_RATIO pixel regions and approximating the coverage of pixels within MAX_DEPTH_TRUE_SCALE
         img_txt = calculate_depth_txt_img(depth_array)
         print(img_txt)
-        
+
         # Print some debugging messages
         processing_time = time.time() - last_time
         print("Text-based depth img within %.3f meter" % MAX_DEPTH)
@@ -96,4 +96,3 @@ try:
 
 except Exception as e:
     print(e)
-    pass

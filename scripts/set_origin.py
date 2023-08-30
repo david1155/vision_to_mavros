@@ -34,7 +34,7 @@ def send_message(msg, mav, pub):
     rosmsg = convert_to_rosmsg(msg)
     pub.publish(rosmsg)
 
-    print("sent message %s" % msg)
+    print(f"sent message {msg}")
 
 def set_global_origin(mav, pub):
     """

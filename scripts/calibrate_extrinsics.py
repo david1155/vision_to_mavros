@@ -51,22 +51,20 @@ args = parser.parse_args()
 CHECKERBOARD = (args.grid_H, args.grid_W)
 SIDE_LENGTH = args.size
 
-tmp_folder = args.path + "/tmp"
+tmp_folder = f"{args.path}/tmp"
 
 def add_camera_calibration(intrinsics, streams = None):
-    cam = {}
-    cam['center_px'] = [intrinsics.ppx, intrinsics.ppy]
-    cam['focal_length_px'] = [intrinsics.fx, intrinsics.fy]
-    cam['distortion'] = {}
+    cam = {
+        'center_px': [intrinsics.ppx, intrinsics.ppy],
+        'focal_length_px': [intrinsics.fx, intrinsics.fy],
+        'distortion': {},
+    }
     cam['distortion']['type'] = 'kannalabrandt4'
     cam['distortion']['k'] = intrinsics.coeffs[:4]
     if streams:
         ext = streams["cam1"].get_extrinsics_to(streams["pose"])  # w.r.t.
         #print(ext)
-        cam["extrinsics"] = {}
-        cam["extrinsics"]["T"] = ext.translation
-        #print(ext.rotation)
-        cam["extrinsics"]["R"] = ext.rotation
+        cam["extrinsics"] = {"T": ext.translation, "R": ext.rotation}
     return cam
 
 def save_intrinsics(directory, file_name, intrinsics, streams):
@@ -79,7 +77,7 @@ def save_intrinsics(directory, file_name, intrinsics, streams):
         os.mkdir(directory)
     with open(directory + file_name, 'w') as f:
         json.dump(D, f, indent=4)
-        print("Intrinsics output written to " + directory + file_name)
+        print(f"Intrinsics output written to {directory}{file_name}")
 
 
 def read_calibration(cam, extrinsics = False):
@@ -117,10 +115,15 @@ def find_realsense_serial_no(type):
     devices = rs.context().devices
     for i in range(len(devices)):
         if (devices[i].get_info(rs.camera_info.name) == camera_name[type]):
-            print('Found one connected ' + camera_name[type] + ' with serial no:', devices[i].get_info(rs.camera_info.serial_number))
+            print(
+                f'Found one connected {camera_name[type]} with serial no:',
+                devices[i].get_info(rs.camera_info.serial_number),
+            )
             return devices[i].get_info(rs.camera_info.serial_number)
 
-    print('No ' + camera_name[type] + ' found, please check connection or input serial manually')
+    print(
+        f'No {camera_name[type]} found, please check connection or input serial manually'
+    )
     return None
 
 if not args.calibrate:
@@ -129,16 +132,12 @@ if not args.calibrate:
     serial_t265 = None
     serial_d4xx = None
 
-    if (not args.SN_T265):
-        serial_t265 = find_realsense_serial_no(0)
-    else:
-        serial_t265 = args.SN_T265
-
-    if (not args.SN_D4xx):
-        serial_d4xx = find_realsense_serial_no(1)
-    else:
-        serial_d4xx = args.SN_D4xx
-
+    serial_t265 = (
+        find_realsense_serial_no(0) if (not args.SN_T265) else args.SN_T265
+    )
+    serial_d4xx = (
+        find_realsense_serial_no(1) if (not args.SN_D4xx) else args.SN_D4xx
+    )
     if (not serial_t265) or (not serial_d4xx):
         print("Specify serial numbers --SN_T265 and --SN_D4xx (for online calibration, or --calibrate for prerecorded images with --path path to folder)")
         exit()
@@ -166,7 +165,6 @@ if not args.calibrate:
         streams = {"cam1"  : profile1.get_stream(rs.stream.fisheye, 1).as_video_stream_profile(),
                    "pose"  : profile1.get_stream(rs.stream.pose),
                    "cam2" : profile2.get_stream(rs.stream.infrared, 1).as_video_stream_profile()}  # IR1
-                   #"cam2" : profile1.get_stream(rs.stream.fisheye, 2).as_video_stream_profile()}  # test
         intrinsics = {"cam1"  : streams["cam1"].get_intrinsics(),
                       "cam2" : streams["cam2"].get_intrinsics()}
         #print("cam1:",  intrinsics["cam1"])
@@ -212,15 +210,15 @@ if not args.calibrate:
                 print("'s' key pressed. Saving temp images..")
                 if not os.path.exists(tmp_folder):
                     os.mkdir(tmp_folder)
-                cv2.imwrite(tmp_folder + '/fe1_' + str(i) + '.png', img_fe1)
-                cv2.imwrite(tmp_folder + '/fe2_' + str(i) + '.png', img_fe2)
-                cv2.imwrite(tmp_folder + '/ir1_' + str(i) + '.png', img_ir1)
+                cv2.imwrite(f'{tmp_folder}/fe1_{str(i)}.png', img_fe1)
+                cv2.imwrite(f'{tmp_folder}/fe2_{str(i)}.png', img_fe2)
+                cv2.imwrite(f'{tmp_folder}/ir1_{str(i)}.png', img_ir1)
                 # cv2.imwrite(tmp_folder+ '/ir2_' + str(i) + '.png', img_ir2)
-                cv2.imwrite(tmp_folder + '/color_' + str(i) + '.png', img_color)
-                print("Saved temp images in temp folder " + tmp_folder)
+                cv2.imwrite(f'{tmp_folder}/color_{str(i)}.png', img_color)
+                print(f"Saved temp images in temp folder {tmp_folder}")
                 i = i+1
 
-            if k == ord('q') or k == ord('c'):
+            if k in [ord('q'), ord('c')]:
                 break
 
     finally:
@@ -237,9 +235,9 @@ P2_1 = []  # in image #1
 P2_2 = []  # in image #2
 
 # TODO: configure streams
-images1 = glob.glob(tmp_folder + '/fe1_*')
+images1 = glob.glob(f'{tmp_folder}/fe1_*')
 #images2 = glob.glob(tmp_folder + '/fe2_*')  # test
-images2 = glob.glob(tmp_folder + '/ir1_*')
+images2 = glob.glob(f'{tmp_folder}/ir1_*')
 images1.sort()
 images2.sort()
 #print(images1)
@@ -318,7 +316,9 @@ try:
     )
 except cv2.error as e:
     print("Error: ", e)
-    print("Please make sure that the checkerboard exists in the images. See tmp images in " + tmp_folder + "  to debug.")
+    print(
+        f"Please make sure that the checkerboard exists in the images. See tmp images in {tmp_folder}  to debug."
+    )
     exit()
 
 print("RMS:", rms)
@@ -334,11 +334,11 @@ H_pose_fe1 = H1
 H_pose_ir1 = H_pose_fe1.dot( np.linalg.inv(H_ir1_fe1) )
 print("H (ir1 wrt pose) =", H_pose_ir1)
 
-fn = args.path + "/H.txt"
+fn = f"{args.path}/H.txt"
 np.savetxt(fn, H_pose_ir1, fmt='%.9f')
 print("Extrinsic output written to", fn)
 
-if not args.save_tmp:
-    if os.path.isdir(tmp_folder):
+if os.path.isdir(tmp_folder):
+    if not args.save_tmp:
         shutil.rmtree(tmp_folder, ignore_errors=True)
         print("Temporary files deleted. If you wish to keep the tmp files, use --save_tmp True.")

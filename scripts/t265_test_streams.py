@@ -32,7 +32,7 @@ cfg.enable_stream(rs.stream.fisheye, 2) # Right camera
 pipe.start(cfg)
 
 try:
-    while(1):
+    while 1:
         frames = pipe.wait_for_frames()
 
         # Left fisheye camera frame
@@ -46,9 +46,7 @@ try:
         print('Left frame', left_data.shape)
         print('Right frame', right_data.shape)
 
-        # Positional data frame
-        pose = frames.get_pose_frame()
-        if pose:
+        if pose := frames.get_pose_frame():
             pose_data = pose.get_pose_data()
             print("\nFrame number: %5.0f" % (pose.frame_number))
             print("Position xyz: % 2.4f % 2.4f % 2.4f" % (pose_data.translation.x, pose_data.translation.y, pose_data.translation.z))

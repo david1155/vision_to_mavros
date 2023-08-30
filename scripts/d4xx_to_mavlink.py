@@ -201,28 +201,30 @@ def progress(string):
 # Using default values if no specified inputs
 if not connection_string:
     connection_string = connection_string_default
-    progress("INFO: Using default connection_string %s" % connection_string)
+    progress(f"INFO: Using default connection_string {connection_string}")
 else:
-    progress("INFO: Using connection_string %s" % connection_string)
+    progress(f"INFO: Using connection_string {connection_string}")
 
 if not connection_baudrate:
     connection_baudrate = connection_baudrate_default
-    progress("INFO: Using default connection_baudrate %s" % connection_baudrate)
+    progress(f"INFO: Using default connection_baudrate {connection_baudrate}")
 else:
-    progress("INFO: Using connection_baudrate %s" % connection_baudrate)
-    
+    progress(f"INFO: Using connection_baudrate {connection_baudrate}")
+
 if not obstacle_distance_msg_hz:
     obstacle_distance_msg_hz = obstacle_distance_msg_hz_default
-    progress("INFO: Using default obstacle_distance_msg_hz %s" % obstacle_distance_msg_hz)
+    progress(
+        f"INFO: Using default obstacle_distance_msg_hz {obstacle_distance_msg_hz}"
+    )
 else:
-    progress("INFO: Using obstacle_distance_msg_hz %s" % obstacle_distance_msg_hz)
+    progress(f"INFO: Using obstacle_distance_msg_hz {obstacle_distance_msg_hz}")
 
 # The list of filters to be applied on the depth image
 for i in range(len(filters)):
     if filters[i][0] is True:
-        progress("INFO: Applying: %s" % filters[i][1])
+        progress(f"INFO: Applying: {filters[i][1]}")
     else:
-        progress("INFO: NOT applying: %s" % filters[i][1])
+        progress(f"INFO: NOT applying: {filters[i][1]}")
 
 if not debug_enable:
     debug_enable = debug_enable_default
@@ -311,9 +313,9 @@ def send_distance_sensor_message():
 
 def send_msg_to_gcs(text_to_be_sent):
     # MAV_SEVERITY: 0=EMERGENCY 1=ALERT 2=CRITICAL 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG, 8=ENUM_END
-    text_msg = 'D4xx: ' + text_to_be_sent
+    text_msg = f'D4xx: {text_to_be_sent}'
     conn.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
-    progress("INFO: %s" % text_to_be_sent)
+    progress(f"INFO: {text_to_be_sent}")
 
 # Request a timesync update from the flight controller, for future work.
 # TODO: Inspect the usage of timesync_update 
@@ -342,7 +344,7 @@ def ahrs2_msg_callback(value):
 
 DS5_product_ids = ["0AD1", "0AD2", "0AD3", "0AD4", "0AD5", "0AF6", "0AFE", "0AFF", "0B00", "0B01", "0B03", "0B07", "0B3A", "0B5C"]
 
-def find_device_that_supports_advanced_mode() :
+def find_device_that_supports_advanced_mode():
     global device_id
     ctx = rs.context()
     ds5_dev = rs.device()
@@ -352,7 +354,9 @@ def find_device_that_supports_advanced_mode() :
             name = rs.camera_info.name
             if dev.supports(name):
                 if not camera_name or (camera_name.lower() == dev.get_info(name).split()[2].lower()):
-                    progress("INFO: Found device that supports advanced mode: %s" % dev.get_info(name))
+                    progress(
+                        f"INFO: Found device that supports advanced mode: {dev.get_info(name)}"
+                    )
                     device_id = dev.get_info(rs.camera_info.serial_number)
                     return dev
     raise Exception("No device that supports advanced mode was found")
@@ -374,9 +378,9 @@ def realsense_enable_advanced_mode(advnc_mode):
 def realsense_load_settings_file(advnc_mode, setting_file):
     # Sanity checks
     if os.path.isfile(setting_file):
-        progress("INFO: Setting file found %s" % setting_file)
+        progress(f"INFO: Setting file found {setting_file}")
     else:
-        progress("INFO: Cannot find setting file %s" % setting_file)
+        progress(f"INFO: Cannot find setting file {setting_file}")
         exit()
 
     if advnc_mode.is_enabled():
@@ -384,7 +388,7 @@ def realsense_load_settings_file(advnc_mode, setting_file):
     else:
         progress("INFO: Device does not support advanced mode")
         exit()
-    
+
     # Input for load_json() is the content of the json file, not the file path
     with open(setting_file, 'r') as file:
         json_text = file.read().strip()
@@ -412,7 +416,7 @@ def realsense_connect():
     # Getting the depth sensor's depth scale (see rs-align example for explanation)
     depth_sensor = profile.get_device().first_depth_sensor()
     depth_scale = depth_sensor.get_depth_scale()
-    progress("INFO: Depth scale is: %s" % depth_scale)
+    progress(f"INFO: Depth scale is: {depth_scale}")
 
 def realsense_configure_setting(setting_file):
     device = find_device_that_supports_advanced_mode()
@@ -423,12 +427,12 @@ def realsense_configure_setting(setting_file):
 # Setting parameters for the OBSTACLE_DISTANCE message based on actual camera's intrinsics and user-defined params
 def set_obstacle_distance_params():
     global angle_offset, camera_facing_angle_degree, increment_f, depth_scale, depth_hfov_deg, depth_vfov_deg, obstacle_line_height_ratio, obstacle_line_thickness_pixel
-    
+
     # Obtain the intrinsics from the camera itself
     profiles = pipe.get_active_profile()
     depth_intrinsics = profiles.get_stream(STREAM_TYPE[0]).as_video_stream_profile().intrinsics
-    progress("INFO: Depth camera intrinsics: %s" % depth_intrinsics)
-    
+    progress(f"INFO: Depth camera intrinsics: {depth_intrinsics}")
+
     # For forward facing camera with a horizontal wide view:
     #   HFOV=2*atan[w/(2.fx)],
     #   VFOV=2*atan[h/(2.fy)],
@@ -448,11 +452,15 @@ def set_obstacle_distance_params():
 
     # Sanity check for depth configuration
     if obstacle_line_height_ratio < 0 or obstacle_line_height_ratio > 1:
-        progress("Please make sure the horizontal position is within [0-1]: %s"  % obstacle_line_height_ratio)
+        progress(
+            f"Please make sure the horizontal position is within [0-1]: {obstacle_line_height_ratio}"
+        )
         sys.exit()
 
     if obstacle_line_thickness_pixel < 1 or obstacle_line_thickness_pixel > DEPTH_HEIGHT:
-        progress("Please make sure the thickness is within [0-DEPTH_HEIGHT]: %s" % obstacle_line_thickness_pixel)
+        progress(
+            f"Please make sure the thickness is within [0-DEPTH_HEIGHT]: {obstacle_line_thickness_pixel}"
+        )
         sys.exit()
 
 # Find the height of the horizontal line to calculate the obstacle distances
@@ -551,11 +559,7 @@ class SensorFactory(GstRtspServer.RTSPMediaFactory):
         self.number_frames = 0
         self.fps = FPS
         self.duration = 1 / self.fps * Gst.SECOND
-        self.launch_string = 'appsrc name=source is-live=true block=true format=GST_FORMAT_TIME ' \
-                             'caps=video/x-raw,format=BGR,width={},height={},framerate={}/1 ' \
-                             '! videoconvert ! video/x-raw,format=I420 ' \
-                             '! x264enc speed-preset=ultrafast tune=zerolatency ' \
-                             '! rtph264pay config-interval=1 name=pay0 pt=96'.format(COLOR_WIDTH, COLOR_HEIGHT, self.fps)
+        self.launch_string = f'appsrc name=source is-live=true block=true format=GST_FORMAT_TIME caps=video/x-raw,format=BGR,width={COLOR_WIDTH},height={COLOR_HEIGHT},framerate={self.fps}/1 ! videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay config-interval=1 name=pay0 pt=96'
 
     def on_need_data(self, src, length):
         global rtsp_streaming_img
@@ -609,7 +613,7 @@ def get_local_ip():
 
 try:
     # Note: 'version' attribute is supported from pyrealsense2 2.31 onwards and might require building from source
-    progress("INFO: pyrealsense2 version: %s" % str(rs.__version__))
+    progress(f"INFO: pyrealsense2 version: {str(rs.__version__)}")
 except Exception:
     # fail silently
     pass
@@ -665,7 +669,9 @@ else:
 
 glib_loop = None
 if RTSP_STREAMING_ENABLE is True:
-    send_msg_to_gcs('RTSP at rtsp://' + get_local_ip() + ':' + RTSP_PORT + RTSP_MOUNT_POINT)
+    send_msg_to_gcs(
+        f'RTSP at rtsp://{get_local_ip()}:{RTSP_PORT}{RTSP_MOUNT_POINT}'
+    )
     Gst.init(None)
     server = GstServer()
     glib_loop = GLib.MainLoop()
@@ -734,7 +740,7 @@ try:
             output_image = np.asanyarray(colorizer.colorize(filtered_frame).get_data())
 
             # Draw a horizontal line to visualize the obstacles' line
-            x1, y1 = int(0), int(obstacle_line_height)
+            x1, y1 = 0, int(obstacle_line_height)
             x2, y2 = int(DEPTH_WIDTH), int(obstacle_line_height)
             line_thickness = obstacle_line_thickness_pixel
             cv2.line(output_image, (x1, y1), (x2, y2), (0, 255, 0), thickness=line_thickness)
@@ -757,8 +763,8 @@ try:
             cv2.waitKey(1)
 
             # Print all the distances in a line
-            progress("%s" % (str(distances)))
-            
+            progress(f"{str(distances)}")
+
             last_time = time.time()
 
 except Exception as e:

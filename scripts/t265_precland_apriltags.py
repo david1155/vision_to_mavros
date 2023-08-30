@@ -159,11 +159,10 @@ else:
 
 if scale_calib_enable == True:
     print("\nINFO: SCALE CALIBRATION PROCESS. DO NOT RUN DURING FLIGHT.\nINFO: TYPE IN NEW SCALE IN FLOATING POINT FORMAT\n")
+elif scale_factor == 1.0:
+    print("INFO: Using default scale factor", scale_factor)
 else:
-    if scale_factor == 1.0:
-        print("INFO: Using default scale factor", scale_factor)
-    else:
-        print("INFO: Using scale factor", scale_factor)
+    print("INFO: Using scale factor", scale_factor)
 
 if not visualization:
     visualization = 0
@@ -194,17 +193,11 @@ if not camera_orientation:
 else:
     print("INFO: Using camera orientation", camera_orientation)
 
-if camera_orientation == 0: 
-    # Forward, USB port to the right
-    H_aeroRef_T265Ref = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
-    H_T265body_aeroBody = np.linalg.inv(H_aeroRef_T265Ref)
-elif camera_orientation == 1:
-    # Downfacing, USB port to the right
-    H_aeroRef_T265Ref = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
+# Forward, USB port to the right
+H_aeroRef_T265Ref = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
+if camera_orientation == 1:
     H_T265body_aeroBody = np.array([[0,1,0,0],[1,0,0,0],[0,0,-1,0],[0,0,0,1]])
-else: 
-    # Default is facing forward, USB port to the right
-    H_aeroRef_T265Ref = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
+else:
     H_T265body_aeroBody = np.linalg.inv(H_aeroRef_T265Ref)
 
 #######################################
@@ -338,7 +331,7 @@ def send_confidence_level_dummy_message():
         # If confidence level changes, send MAVLink message to show confidence level textually and phonetically
         if current_confidence is None or current_confidence != data.tracker_confidence:
             current_confidence = data.tracker_confidence
-            confidence_status_string = 'Tracking confidence: ' + pose_data_confidence_level[data.tracker_confidence]
+            confidence_status_string = f'Tracking confidence: {pose_data_confidence_level[data.tracker_confidence]}'
             status_msg = vehicle.message_factory.statustext_encode(
                 3,	            #severity, defined here: https://mavlink.io/en/messages/common.html#MAV_SEVERITY, 3 will let the message be displayed on Mission Planner HUD
                 confidence_status_string.encode()	  #text	char[50]       
@@ -401,7 +394,11 @@ def update_timesync(ts=0, tc=0):
 # Listen to messages that indicate EKF is ready to set home, then set EKF home automatically.
 def statustext_callback(self, attr_name, value):
     # These are the status texts that indicates EKF is ready to receive home position
-    if value.text == "GPS Glitch" or value.text == "GPS Glitch cleared" or value.text == "EKF2 IMU1 ext nav yaw alignment complete":
+    if value.text in [
+        "GPS Glitch",
+        "GPS Glitch cleared",
+        "EKF2 IMU1 ext nav yaw alignment complete",
+    ]:
         time.sleep(0.1)
         print("INFO: Set EKF home with default GPS location")
         set_default_global_origin()
@@ -437,10 +434,7 @@ def vehicle_connect():
     except:
         print('Connection error! Retrying...')
 
-    if vehicle == None:
-        return False
-    else:
-        return True
+    return vehicle is not None
 
 # Connect to the T265 through USB 3.0 (must be USB 3.0 since image streams are being consumed)
 def realsense_connect():

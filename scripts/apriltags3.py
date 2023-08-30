@@ -204,8 +204,7 @@ class Detector(object):
                 searchpath=['apriltags']):
 
         # Parse the parameters
-        self.params = dict()
-        self.params['families'] = families.split()
+        self.params = {'families': families.split()}
         self.params['nthreads'] = nthreads
         self.params['quad_decimate'] = quad_decimate
         self.params['quad_sigma'] = quad_sigma
@@ -215,12 +214,8 @@ class Detector(object):
 
         # detect OS to get extension for DLL
         uname0 = os.uname()[0]
-        if uname0 == 'Darwin':
-            extension = '.dylib'
-        else:
-            extension = '.so'
-
-        filename = 'libapriltag'+extension
+        extension = '.dylib' if uname0 == 'Darwin' else '.so'
+        filename = f'libapriltag{extension}'
 
         self.libc = None
         self.tag_detector = None
@@ -239,7 +234,7 @@ class Detector(object):
             self.libc = ctypes.CDLL(filename)
 
         if self.libc is None:
-            raise RuntimeError('could not find DLL named ' + filename)
+            raise RuntimeError(f'could not find DLL named {filename}')
 
 
         # create the c-_apriltag_detector object
@@ -248,7 +243,7 @@ class Detector(object):
 
         # create the family
         self.libc.apriltag_detector_add_family_bits.restype = None
-        self.tag_families = dict()
+        self.tag_families = {}
         if 'tag16h5' in self.params['families']:
             self.libc.tag16h5_create.restype = ctypes.POINTER(_ApriltagFamily)
             self.tag_families['tag16h5']=self.libc.tag16h5_create()
@@ -295,37 +290,38 @@ class Detector(object):
 
 
     def __del__(self):
-        if self.tag_detector_ptr is not None:
+        if self.tag_detector_ptr is None:
+            return
             # destroy the tag families
-            for family, tf in self.tag_families.items():
-                if 'tag16h5' == family:
-                    self.libc.tag16h5_destroy.restype = None
-                    self.libc.tag16h5_destroy(tf)
-                elif 'tag25h9' == family:
-                    self.libc.tag25h9_destroy.restype = None
-                    self.libc.tag25h9_destroy(tf)
-                elif 'tag36h11' == family:
-                    self.libc.tag36h11_destroy.restype = None
-                    self.libc.tag36h11_destroy(tf)
-                elif 'tagCircle21h7' == family:
-                    self.libc.tagCircle21h7_destroy.restype = None
-                    self.libc.tagCircle21h7_destroy(tf)
-                elif 'tagCircle49h12' == family:
-                    self.libc.tagCircle49h12_destroy.restype = None
-                    self.libc.tagCircle49h12_destroy(tf)
-                elif 'tagCustom48h12' == family:
-                    self.libc.tagCustom48h12_destroy.restype = None
-                    self.libc.tagCustom48h12_destroy(tf)
-                elif 'tagStandard41h12' == family:
-                    self.libc.tagStandard41h12_destroy.restype = None
-                    self.libc.tagStandard41h12_destroy(tf)
-                elif 'tagStandard52h13' == family:
-                    self.libc.tagStandard52h13_destroy.restype = None
-                    self.libc.tagStandard52h13_destroy(tf)
+        for family, tf in self.tag_families.items():
+            if family == 'tag16h5':
+                self.libc.tag16h5_destroy.restype = None
+                self.libc.tag16h5_destroy(tf)
+            elif family == 'tag25h9':
+                self.libc.tag25h9_destroy.restype = None
+                self.libc.tag25h9_destroy(tf)
+            elif family == 'tag36h11':
+                self.libc.tag36h11_destroy.restype = None
+                self.libc.tag36h11_destroy(tf)
+            elif family == 'tagCircle21h7':
+                self.libc.tagCircle21h7_destroy.restype = None
+                self.libc.tagCircle21h7_destroy(tf)
+            elif family == 'tagCircle49h12':
+                self.libc.tagCircle49h12_destroy.restype = None
+                self.libc.tagCircle49h12_destroy(tf)
+            elif family == 'tagCustom48h12':
+                self.libc.tagCustom48h12_destroy.restype = None
+                self.libc.tagCustom48h12_destroy(tf)
+            elif family == 'tagStandard41h12':
+                self.libc.tagStandard41h12_destroy.restype = None
+                self.libc.tagStandard41h12_destroy(tf)
+            elif family == 'tagStandard52h13':
+                self.libc.tagStandard52h13_destroy.restype = None
+                self.libc.tagStandard52h13_destroy(tf)
 
-            # destroy the detector
-            self.libc.apriltag_detector_destroy.restype = None
-            self.libc.apriltag_detector_destroy(self.tag_detector_ptr)
+        # destroy the detector
+        self.libc.apriltag_detector_destroy.restype = None
+        self.libc.apriltag_detector_destroy(self.tag_detector_ptr)
 
     def detect(self, img, estimate_tag_pose=False, camera_params=None, tag_size=None):
 
@@ -367,12 +363,12 @@ image of type numpy.uint8.'''
             detection.corners = corners
 
             if estimate_tag_pose:
-                if camera_params==None:
+                if camera_params is None:
                     raise Exception('camera_params must be provided to detect if estimate_tag_pose is set to True')
-                if tag_size==None:
+                if tag_size is None:
                     raise Exception('tag_size must be provided to detect if estimate_tag_pose is set to True')
 
-                camera_fx, camera_fy, camera_cx, camera_cy = [ c for c in camera_params ]
+                camera_fx, camera_fy, camera_cx, camera_cy = list(camera_params)
 
                 info = _ApriltagDetectionInfo(det=apriltag,
                                               tagsize=tag_size,
@@ -452,14 +448,17 @@ if __name__ == '__main__':
                            decode_sharpening=0.25,
                            debug=0)
 
-    with open(test_images_path + '/test_info.yaml', 'r') as stream:
+    with open(f'{test_images_path}/test_info.yaml', 'r') as stream:
         parameters = yaml.load(stream)
 
     #### TEST WITH THE SAMPLE IMAGE ####
 
     print("\n\nTESTING WITH A SAMPLE IMAGE")
 
-    img = cv2.imread(test_images_path+'/'+parameters['sample_test']['file'], cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(
+        f'{test_images_path}/' + parameters['sample_test']['file'],
+        cv2.IMREAD_GRAYSCALE,
+    )
     cameraMatrix = numpy.array(parameters['sample_test']['K']).reshape((3,3))
     camera_params = ( cameraMatrix[0,0], cameraMatrix[1,1], cameraMatrix[0,2], cameraMatrix[1,2] )
 
@@ -503,7 +502,7 @@ if __name__ == '__main__':
 
     for image_name in image_names:
         print("Testing image ", image_name)
-        ab_path = test_images_path + '/' + image_name
+        ab_path = f'{test_images_path}/{image_name}'
         if(not os.path.isfile(ab_path)):
             continue
         groundtruth = float(image_name.split('_')[-1].split('.')[0])  # name of test image should be set to its groundtruth
@@ -536,7 +535,7 @@ if __name__ == '__main__':
 
     for image_name in image_names:
         print("Testing image ", image_name)
-        ab_path = test_images_path + '/' + image_name
+        ab_path = f'{test_images_path}/{image_name}'
         if(not os.path.isfile(ab_path)):
             continue
 
@@ -567,7 +566,7 @@ if __name__ == '__main__':
                         color=(0, 0, 255))
 
         if visualization:
-            cv2.imshow('Detected tags for ' + image_name    , color_img)
+            cv2.imshow(f'Detected tags for {image_name}', color_img)
 
             k = cv2.waitKey(0)
             if k == 27:         # wait for ESC key to exit

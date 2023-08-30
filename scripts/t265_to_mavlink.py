@@ -169,36 +169,50 @@ debug_enable = args.debug_enable
 # Using default values if no specified inputs
 if not connection_string:
     connection_string = connection_string_default
-    progress("INFO: Using default connection_string %s" % connection_string)
+    progress(f"INFO: Using default connection_string {connection_string}")
 else:
-    progress("INFO: Using connection_string %s" % connection_string)
+    progress(f"INFO: Using connection_string {connection_string}")
 
 if not connection_baudrate:
     connection_baudrate = connection_baudrate_default
-    progress("INFO: Using default connection_baudrate %s" % connection_baudrate)
+    progress(f"INFO: Using default connection_baudrate {connection_baudrate}")
 else:
-    progress("INFO: Using connection_baudrate %s" % connection_baudrate)
+    progress(f"INFO: Using connection_baudrate {connection_baudrate}")
 
 if not vision_position_estimate_msg_hz:
     vision_position_estimate_msg_hz = vision_position_estimate_msg_hz_default
-    progress("INFO: Using default vision_position_estimate_msg_hz %s" % vision_position_estimate_msg_hz)
+    progress(
+        f"INFO: Using default vision_position_estimate_msg_hz {vision_position_estimate_msg_hz}"
+    )
 else:
-    progress("INFO: Using vision_position_estimate_msg_hz %s" % vision_position_estimate_msg_hz)
-    
+    progress(
+        f"INFO: Using vision_position_estimate_msg_hz {vision_position_estimate_msg_hz}"
+    )
+
 if not vision_position_delta_msg_hz:
     vision_position_delta_msg_hz = vision_position_delta_msg_hz_default
-    progress("INFO: Using default vision_position_delta_msg_hz %s" % vision_position_delta_msg_hz)
+    progress(
+        f"INFO: Using default vision_position_delta_msg_hz {vision_position_delta_msg_hz}"
+    )
 else:
-    progress("INFO: Using vision_position_delta_msg_hz %s" % vision_position_delta_msg_hz)
+    progress(
+        f"INFO: Using vision_position_delta_msg_hz {vision_position_delta_msg_hz}"
+    )
 
 if not vision_speed_estimate_msg_hz:
     vision_speed_estimate_msg_hz = vision_speed_estimate_msg_hz_default
-    progress("INFO: Using default vision_speed_estimate_msg_hz %s" % vision_speed_estimate_msg_hz)
+    progress(
+        f"INFO: Using default vision_speed_estimate_msg_hz {vision_speed_estimate_msg_hz}"
+    )
 else:
-    progress("INFO: Using vision_speed_estimate_msg_hz %s" % vision_speed_estimate_msg_hz)
+    progress(
+        f"INFO: Using vision_speed_estimate_msg_hz {vision_speed_estimate_msg_hz}"
+    )
 
 if body_offset_enabled == 1:
-    progress("INFO: Using camera position offset: Enabled, x y z is %s %s %s" % (body_offset_x, body_offset_y, body_offset_z))
+    progress(
+        f"INFO: Using camera position offset: Enabled, x y z is {body_offset_x} {body_offset_y} {body_offset_z}"
+    )
 else:
     progress("INFO: Using camera position offset: Disabled")
 
@@ -209,29 +223,23 @@ else:
 
 if scale_calib_enable == True:
     progress("\nINFO: SCALE CALIBRATION PROCESS. DO NOT RUN DURING FLIGHT.\nINFO: TYPE IN NEW SCALE IN FLOATING POINT FORMAT\n")
+elif scale_factor == 1.0:
+    progress(f"INFO: Using default scale factor {scale_factor}")
 else:
-    if scale_factor == 1.0:
-        progress("INFO: Using default scale factor %s" % scale_factor)
-    else:
-        progress("INFO: Using scale factor %s" % scale_factor)
+    progress(f"INFO: Using scale factor {scale_factor}")
 
 if not camera_orientation:
     camera_orientation = camera_orientation_default
-    progress("INFO: Using default camera orientation %s" % camera_orientation)
+    progress(f"INFO: Using default camera orientation {camera_orientation}")
 else:
-    progress("INFO: Using camera orientation %s" % camera_orientation)
+    progress(f"INFO: Using camera orientation {camera_orientation}")
 
-if camera_orientation == 0:     # Forward, USB port to the right
-    H_aeroRef_T265Ref   = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
-    H_T265body_aeroBody = np.linalg.inv(H_aeroRef_T265Ref)
-elif camera_orientation == 1:   # Downfacing, USB port to the right
-    H_aeroRef_T265Ref   = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
+H_aeroRef_T265Ref   = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
+if camera_orientation == 1:
     H_T265body_aeroBody = np.array([[0,1,0,0],[1,0,0,0],[0,0,-1,0],[0,0,0,1]])
-elif camera_orientation == 2:   # 45degree forward
-    H_aeroRef_T265Ref   = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
+elif camera_orientation == 2:
     H_T265body_aeroBody = (tf.euler_matrix(m.pi/4, 0, 0)).dot(np.linalg.inv(H_aeroRef_T265Ref))
-else:                           # Default is facing forward, USB port to the right
-    H_aeroRef_T265Ref   = np.array([[0,0,-1,0],[1,0,0,0],[0,-1,0,0],[0,0,0,1]])
+else:
     H_T265body_aeroBody = np.linalg.inv(H_aeroRef_T265Ref)
 
 if not debug_enable:
@@ -346,16 +354,16 @@ def send_vision_speed_estimate_message():
 # Update the changes of confidence level on GCS and terminal
 def update_tracking_confidence_to_gcs():
     if data is not None and update_tracking_confidence_to_gcs.prev_confidence_level != data.tracker_confidence:
-        confidence_status_string = 'Tracking confidence: ' + pose_data_confidence_level[data.tracker_confidence]
+        confidence_status_string = f'Tracking confidence: {pose_data_confidence_level[data.tracker_confidence]}'
         send_msg_to_gcs(confidence_status_string)
         update_tracking_confidence_to_gcs.prev_confidence_level = data.tracker_confidence
 
 # https://mavlink.io/en/messages/common.html#STATUSTEXT
 def send_msg_to_gcs(text_to_be_sent):
     # MAV_SEVERITY: 0=EMERGENCY 1=ALERT 2=CRITICAL 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG, 8=ENUM_END
-    text_msg = 'T265: ' + text_to_be_sent
+    text_msg = f'T265: {text_to_be_sent}'
     conn.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
-    progress("INFO: %s" % text_to_be_sent)
+    progress(f"INFO: {text_to_be_sent}")
 
 
 # Send a mavlink SET_GPS_GLOBAL_ORIGIN message (http://mavlink.org/messages/common#SET_GPS_GLOBAL_ORIGIN), which allows us to use local position information without a GPS.
@@ -423,7 +431,7 @@ def increment_reset_counter():
 # List of notification events: https://github.com/IntelRealSense/librealsense/blob/development/include/librealsense2/h/rs_types.h
 # List of notification API: https://github.com/IntelRealSense/librealsense/blob/development/common/notifications.cpp
 def realsense_notification_callback(notif):
-    progress("INFO: T265 event: " + notif)
+    progress(f"INFO: T265 event: {notif}")
     if notif.get_category() is rs.notification_category.pose_relocalization:
         increment_reset_counter()
         send_msg_to_gcs('Relocalization detected')
@@ -459,7 +467,7 @@ def user_input_monitor():
         # Special case: updating scale
         if scale_calib_enable == True:
             scale_factor = float(input("INFO: Type in new scale as float number\n"))
-            progress("INFO: New scale is %s" % scale_factor)
+            progress(f"INFO: New scale is {scale_factor}")
 
         if enable_auto_set_ekf_home:
             send_msg_to_gcs('Set EKF home with default GPS location')
@@ -476,7 +484,7 @@ def user_input_monitor():
                 set_default_global_origin()
                 set_default_home_position()
             else:
-                progress("Got keyboard input %s" % c)
+                progress(f"Got keyboard input {c}")
         except IOError: pass
 
 
@@ -485,7 +493,7 @@ def user_input_monitor():
 #######################################
 
 try:
-    progress("INFO: pyrealsense2 version: %s" % str(rs.__version__))
+    progress(f"INFO: pyrealsense2 version: {str(rs.__version__)}")
 except Exception:
     # fail silently
     pass

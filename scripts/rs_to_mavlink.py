@@ -27,13 +27,13 @@ def mavproxy_create_connection():
             " --out udp:"  + connection_out_p03)
 
 def run_t265():
-    os.system("python3 t265_to_mavlink.py --connect=" + connection_out_p01)
+    os.system(f"python3 t265_to_mavlink.py --connect={connection_out_p01}")
 
 def run_d4xx():
-    os.system("python3 d4xx_to_mavlink.py --connect=" + connection_out_p02)
+    os.system(f"python3 d4xx_to_mavlink.py --connect={connection_out_p02}")
 
 def run_control():
-    os.system("python3 mavlink_control.py --connect=" + connection_out_p03)
+    os.system(f"python3 mavlink_control.py --connect={connection_out_p03}")
 
 thread1 = threading.Thread(target=mavproxy_create_connection)
 thread1.start()

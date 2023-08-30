@@ -208,7 +208,7 @@ try:
             print("Applying: ", filters[i][1])
         else:
             print("NOT applying: ", filters[i][1])
-    
+
     # Start streaming
     profile = pipeline.start(config)
 
@@ -238,13 +238,13 @@ try:
 
         if not depth_frame:
             continue
-        
+
         # Apply the filters
         filtered_frame = depth_frame
         for i in range(len(filters)):
             if filters[i][0] is True:
                 filtered_frame = filters[i][2].process(filtered_frame)
-        
+
         # Show the processing speed
         processing_speed = 1/(time.time() - last_time)
         print("\r>> Processing speed %.2f fps" %(processing_speed), end='')
@@ -275,4 +275,3 @@ except KeyboardInterrupt:
 
 except Exception as e:
     print(e)
-    pass
